@@ -101,41 +101,47 @@ $result = mysqli_query($conn, $query);
   <section class="customers">
     <h2>Top Rated Customers</h2>
     <p>Work with experienced professionals who deliver exceptional results</p>
+    <div class="contractor-grid">
 
-    <div class="customer-grid">
-      <section class="customers">
-        <h2>Top Rated Contractors</h2>
-        <p>Work with experienced professionals who deliver exceptional results</p>
+      <?php
+      if (mysqli_num_rows($result) > 0) {
+        while ($row = mysqli_fetch_assoc($result)) {
 
-        <div class="customer-grid">
-          <?php
-          if (mysqli_num_rows($result) > 0) {
-            while ($row = mysqli_fetch_assoc($result)) {
-              $name = htmlspecialchars($row['service_name']);
-              $photo = !empty($row['profile_photo']) ? "uploads/" . htmlspecialchars($row['profile_photo']) : "https://via.placeholder.com/80";
-              $experience = htmlspecialchars($row['experience']);
-              $description = htmlspecialchars($row['description']);
-              $id = htmlspecialchars($row['user_id']); // to link to their profile page
-          ?>
+          $serviceName = htmlspecialchars($row['service_name']);
+          $photo = !empty($row['profile_photo']) ? "uploads/" . $row['profile_photo'] : "https://via.placeholder.com/150";
+          $experience = htmlspecialchars($row['experience']);
+          $description = htmlspecialchars(substr($row['description'], 0, 80)) . "...";
+          $id = $row['user_id'];
+      ?>
+          <div class="contractor-card">
+            <div class="image-box">
+              <img src="<?= $photo ?>" alt="<?= $serviceName ?>">
+            </div>
 
-              <div class="customer-card">
-                <img src="<?= $photo ?>" alt="<?= $name ?>">
-                <h4><?= $name ?></h4>
-                <p><?= $description ?></p>
-                <div class="star">⭐ 4.9 (234 reviews)</div>
-                <p><strong>Experience:</strong> <?= $experience ?> years</p>
-                <button onclick="window.location.href='contractor_profile.php?id=<?= $id ?>'"> <a href="contractor_profile.php">View Profile</a></button>
+            <div class="contractor-info">
+              <h3><?= $serviceName ?></h3>
+              <p><?= $description ?></p>
+
+              <div class="rating">
+                ⭐⭐⭐⭐⭐ <span>4.9 (220 reviews)</span>
               </div>
 
-          <?php
-            }
-          } else {
-            echo "<p>No contractors found yet.</p>";
-          }
-          ?>
-        </div>
-      </section>
+              <p class="exp"><strong>Experience:</strong> <?= $experience ?> years</p>
+
+              <button class="view-btn" onclick="window.location.href='contractor_profile.php?id=<?= $id ?>'">
+                View Profile
+              </button>
+            </div>
+          </div>
+
+      <?php
+        }
+      } else {
+        echo "<p>No contractors available right now.</p>";
+      }
+      ?>
     </div>
+
   </section>
   <?php include('./includes/footer.php'); ?>
 

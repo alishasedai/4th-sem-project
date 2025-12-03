@@ -1,206 +1,200 @@
 <?php
+include('./includes/db_connect.php');
 session_start();
-include './includes/db_connect.php';
 
-// If ID not found
-if (!isset($_GET['id']) || empty($_GET['id'])) {
-    die("⚠ Invalid contractor profile!");
+if (!isset($_GET['id'])) {
+    die("Contractor not found.");
 }
 
-$contractor_id = $_GET['id'];
+$contractor_id = intval($_GET['id']);
 
 // Fetch contractor details
-$sql = "SELECT cd.*, u.name AS contractor_name 
-        FROM contractor_details cd
-        JOIN users u ON cd.user_id = u.id
-        WHERE cd.user_id = '$contractor_id'
-        LIMIT 1";
+$query = "SELECT * FROM contractor_details WHERE user_id = $contractor_id LIMIT 1";
+$result = mysqli_query($conn, $query);
 
-$result = mysqli_query($conn, $sql);
+if (mysqli_num_rows($result) == 0) {
+    die("Contractor not found!");
+}
+
 $contractor = mysqli_fetch_assoc($result);
 
-if (!$contractor) {
-    die("⚠ Contractor not found!");
+// Fetch reviews
+$reviewQuery = "
+    SELECT r.*, u.name AS customer_name 
+    FROM reviews r 
+    JOIN users u ON r.customer_id = u.id 
+    WHERE r.contractor_id = $contractor_id
+    ORDER BY r.created_at DESC
+";
+$reviewResult = mysqli_query($conn, $reviewQuery);
+$can_review = false;
+
+if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'customer') {
+    $customer_id = $_SESSION['user_id'];
+    $checkBooking = "SELECT id FROM bookings 
+                     WHERE customer_id = $customer_id 
+                       AND contractor_id = $contractor_id 
+                       AND status='completed' 
+                     LIMIT 1";
+    $bookingResult = mysqli_query($conn, $checkBooking);
+
+    if (mysqli_num_rows($bookingResult) > 0) {
+        $can_review = true;
+    }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title><?= htmlspecialchars($contractor['contractor_name']); ?> - Contractor Profile</title>
-
-    <link rel="stylesheet" href="./css/style.css">
-
+    <title><?= $contractor['service_name'] ?> - Contractor Profile</title>
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: Arial;
+            background: #f5f7fa;
             margin: 0;
-            background: #f3f3f3;
         }
 
-        .profile-container {
-            max-width: 1100px;
-            margin: 40px auto;
+        .profile-header {
             background: white;
             padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
         }
 
-        .header-section {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .header-section img {
-            width: 140px;
-            height: 140px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 3px solid #ddd;
-        }
-
-        .header-section h2 {
-            font-size: 28px;
-            margin-top: 12px;
-        }
-
-        .header-section p {
-            color: #444;
-            font-size: 16px;
-            margin-top: -5px;
-        }
-
-        .section-box {
-            background: #fafafa;
-            padding: 18px 22px;
-            margin-top: 25px;
+        .profile-header img {
+            width: 160px;
+            height: 160px;
             border-radius: 10px;
-            border-left: 4px solid #000;
+            object-fit: cover;
         }
 
-        .section-box h3 {
-            margin-top: 0;
+        .profile-info h2 {
+            margin: 0;
+            font-size: 28px;
+            color: #333;
         }
 
-        .section-box p {
-            margin: 6px 0;
+        .profile-info p {
+            color: #555;
         }
 
-        .services-list ul {
-            list-style: none;
-            padding-left: 0;
+        .section {
+            margin: 25px;
+            padding: 25px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
-        .services-list li {
-            background: #eaeaea;
-            display: inline-block;
-            padding: 8px 14px;
-            margin: 5px;
-            border-radius: 6px;
-            font-size: 14px;
+        .section h3 {
+            margin-bottom: 15px;
+            color: #222;
         }
 
-        .gallery img {
-            width: 210px;
-            height: 170px;
+        .portfolio img {
+            width: 160px;
+            height: 120px;
             object-fit: cover;
             border-radius: 8px;
-            margin: 10px;
-            border: 1px solid #ccc;
+            margin-right: 10px;
         }
 
-        .review-box {
-            margin-top: 30px;
-            background: #fff;
-            padding: 18px;
-            border-radius: 10px;
-            border: 1px solid #ddd;
+        .review-card {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9f9f9;
+            border-radius: 8px;
         }
 
-        .btn-contact {
-            display: inline-block;
-            margin-top: 25px;
-            padding: 10px 20px;
-            background: #000;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 6px;
+        .review-card h4 {
+            margin: 0;
         }
 
-        .btn-contact:hover {
-            background: #333;
+        .btn {
+            background: #007bff;
+            padding: 10px 18px;
+            color: white;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .no-reviews {
+            padding: 15px;
+            background: #eee;
+            border-radius: 8px;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- <?php include('./includes/header.php'); ?> -->
+    <!-- Header -->
+    <div class="profile-header">
+        <img src="<?= !empty($contractor['profile_photo']) ? 'uploads/' . $contractor['profile_photo'] : 'https://via.placeholder.com/150' ?>">
 
-    <div class="profile-container">
-
-        <!-- HEADER -->
-        <div class="header-section">
-            <img src="uploads/<?= htmlspecialchars($contractor['profile_photo']); ?>" alt="Profile">
-            <h2><?= htmlspecialchars($contractor['contractor_name']); ?></h2>
-            <p><?= htmlspecialchars($contractor['service_name']); ?></p>
+        <div class="profile-info">
+            <h2><?= htmlspecialchars($contractor['service_name']) ?></h2>
+            <p><?= htmlspecialchars($contractor['description']) ?></p>
+            <p><strong>Experience:</strong> <?= $contractor['experience'] ?> years</p>
+            <p><strong>Phone:</strong> <?= $contractor['phone'] ?></p>
+            <p><strong>Address:</strong> <?= $contractor['address'] ?></p>
         </div>
-
-        <!-- BASIC DETAILS -->
-        <div class="section-box">
-            <h3>Contractor Information</h3>
-            <p><strong>Experience:</strong> <?= htmlspecialchars($contractor['experience']); ?> years</p>
-            <p><strong>Phone:</strong> <?= htmlspecialchars($contractor['phone']); ?></p>
-            <p><strong>Address:</strong> <?= htmlspecialchars($contractor['address']); ?></p>
-            <p><strong>Description:</strong> <?= htmlspecialchars($contractor['description']); ?></p>
-        </div>
-
-        <!-- SERVICES -->
-        <div class="section-box services-list">
-            <h3>Services Offered</h3>
-            <ul>
-                <?php
-                $services = explode(',', $contractor['services']);
-                foreach ($services as $service) {
-                    echo "<li>" . htmlspecialchars(trim($service)) . "</li>";
-                }
-                ?>
-            </ul>
-        </div>
-
-        <!-- WORK GALLERY -->
-        <div class="section-box">
-            <h3>Work Portfolio</h3>
-            <div class="gallery">
-                <?php
-                if (!empty($contractor['work_photos'])) {
-                    $photos = explode(',', $contractor['work_photos']);
-                    foreach ($photos as $photo) {
-                        if (trim($photo) !== "") {
-                            echo '<img src="uploads/' . htmlspecialchars(trim($photo)) . '">';
-                        }
-                    }
-                } else {
-                    echo "<p>No work photos uploaded.</p>";
-                }
-                ?>
-            </div>
-        </div>
-
-        <!-- REVIEWS -->
-        <div class="review-box">
-            <h3>Customer Reviews</h3>
-            <p>⭐ Reviews feature coming soon...</p>
-        </div>
-
-        <a class="btn-contact" href="contact_contractor.php?id=<?= $contractor_id; ?>">Contact Contractor</a>
-
     </div>
 
-    <?php include('./includes/footer.php'); ?>
+    <!-- Portfolio Section -->
+    <div class="section">
+        <h3>Portfolio / Work Photos</h3>
+        <div class="portfolio">
+            <?php
+            if (!empty($contractor['work_photos'])) {
+                $photos = explode(',', $contractor['work_photos']);
+                foreach ($photos as $photo) {
+                    echo "<img src='uploads/$photo'>";
+                }
+            } else {
+                echo "<p>No portfolio added.</p>";
+            }
+            ?>
+        </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="section">
+        <h3>Customer Reviews</h3>
+
+        <?php if (mysqli_num_rows($reviewResult) > 0) { ?>
+
+            <?php while ($review = mysqli_fetch_assoc($reviewResult)) { ?>
+                <div class="review-card">
+                    <h4><?= $review['customer_name'] ?> ⭐ <?= $review['rating'] ?>/5</h4>
+                    <p><?= htmlspecialchars($review['review_text']) ?></p>
+                    <small><?= $review['created_at'] ?></small>
+                </div>
+            <?php } ?>
+
+        <?php } else { ?>
+            <p class="no-reviews">No reviews yet.</p>
+        <?php } ?>
+
+        <!-- Add Review Button (Only customers logged in) -->
+        <!-- Add Review Button (Only if allowed) -->
+        <!-- Add Review Button (Only if allowed) -->
+        <?php if ($can_review) { ?>
+            <br>
+            <button class="btn" onclick="window.location.href='write_review.php?contractor_id=<?= $contractor_id ?>'">
+                Write a Review
+            </button>
+        <?php } ?>
+    </div>
 
 </body>
 
