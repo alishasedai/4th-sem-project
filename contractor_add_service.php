@@ -2,13 +2,14 @@
 session_start();
 include './includes/db_connect.php';
 
-// ✅ Restrict access to logged-in contractors only
+// Restrict access
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'contractor') {
     header("Location: login.php");
     exit();
 }
 
 if (isset($_POST['submit'])) {
+
     $user_id = $_SESSION['user_id'];
     $service_name = $_POST['service_name'];
     $experience = $_POST['experience'];
@@ -17,19 +18,38 @@ if (isset($_POST['submit'])) {
     $description = $_POST['description'];
     $services = $_POST['services'];
 
-    // ✅ File uploads
-    $profile_photo = $_FILES['profile_photo']['name'];
-
-
+    // Upload directory
     $target_dir = "uploads/";
     if (!file_exists($target_dir)) {
         mkdir($target_dir, 0777, true);
     }
+
+    // ---------------------------------------------------------------
+    // 1️⃣ Upload PROFILE PHOTO
+    // ---------------------------------------------------------------
+    $profile_photo = "";
+    if (!empty($_FILES['profile_photo']['name'])) {
+
+        $profile_name = time() . "_" . basename($_FILES['profile_photo']['name']);
+        $target_profile = $target_dir . $profile_name;
+
+        if (move_uploaded_file($_FILES['profile_photo']['tmp_name'], $target_profile)) {
+            $profile_photo = $profile_name;
+        } else {
+            echo "<script>alert('Profile photo upload failed');</script>";
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // 2️⃣ Upload MULTIPLE WORK PHOTOS
+    // ---------------------------------------------------------------
     $uploaded_work_photos = [];
 
     if (!empty($_FILES['work_photos']['name'][0])) {
+
         foreach ($_FILES['work_photos']['tmp_name'] as $key => $tmp_name) {
-            $file_name = basename($_FILES['work_photos']['name'][$key]);
+
+            $file_name = time() . "_" . basename($_FILES['work_photos']['name'][$key]);
             $target_file = $target_dir . $file_name;
 
             if (move_uploaded_file($tmp_name, $target_file)) {
@@ -38,27 +58,27 @@ if (isset($_POST['submit'])) {
         }
     }
 
-    // Convert filenames array into comma-separated string for DB
-    $work_photos_str = implode(',', $uploaded_work_photos);
+    $work_photos_str = implode(",", $uploaded_work_photos);
 
-    move_uploaded_file($_FILES['profile_photo']['tmp_name'], $target_profile);
-    move_uploaded_file($_FILES['work_photo']['tmp_name'], $target_work);
-
-    // ✅ Insert into contractor_details table
+    // ---------------------------------------------------------------
+    // 3️⃣ Insert Data Into Database
+    // ---------------------------------------------------------------
     $sql = "INSERT INTO contractor_details 
-(user_id, service_name, experience, phone, address, description, services, profile_photo, work_photos)
-VALUES 
-('$user_id', '$service_name', '$experience', '$phone', '$address', '$description', '$services', '$profile_photo', '$work_photos_str')";
-
+            (user_id, service_name, experience, phone, address, description, services, profile_photo, work_photos)
+            VALUES 
+            ('$user_id', '$service_name', '$experience', '$phone', '$address', '$description', '$services', '$profile_photo', '$work_photos_str')";
 
     $result = mysqli_query($conn, $sql);
 
     if ($result) {
-        echo "<script>alert('Your service details have been added successfully!'); window.location='contractor_dashboard.php';</script>";
+        echo "<script>alert('Your service details have been added successfully!'); 
+        window.location='contractor_dashboard.php';</script>";
     } else {
         echo "Error: " . mysqli_error($conn);
     }
 }
+?>
+
 ?>
 
 <!DOCTYPE html>

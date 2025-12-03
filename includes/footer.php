@@ -13,7 +13,7 @@
 
      <div>
          <h3>Menu</h3>
-         <a href="#">Home</a>
+         <a href="index.php">Home</a>
          <a href="#">About</a>
          <a href="#">Services</a>
          <a href="#">Works</a>

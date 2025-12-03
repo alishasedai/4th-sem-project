@@ -1,0 +1,130 @@
+/* GENERAL PAGE */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Poppins", sans-serif;
+    background: #f0f2f5;
+}
+
+/* MAIN WRAPPER */
+.page-container {
+    width: 90%;
+    max-width: 900px;
+    margin: 40px auto;
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* CONTRACTOR INFORMATION CARD */
+.contractor-card {
+    background: #fff;
+    padding: 25px;
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.08);
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+.contractor-card h2 {
+    margin-top: 0;
+    color: #222;
+}
+
+.contractor-card p {
+    margin: 8px 0;
+    font-size: 15px;
+}
+
+/* BOOKING FORM */
+.booking-form {
+    background: #ffffff;
+    width: 100%;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.08);
+    animation: slideUp 0.6s ease;
+}
+
+.booking-form h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* INPUT FIELDS */
+.input-group {
+    margin-bottom: 18px;
+}
+
+.input-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #555;
+}
+
+input,
+textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    transition: 0.3s;
+    font-size: 14px;
+}
+
+textarea {
+    resize: vertical;
+    height: 100px;
+}
+
+input:focus,
+textarea:focus {
+    border-color: #000;
+    outline: none;
+}
+
+/* GRID FOR DATE + TIME */
+.two-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 100px;
+}
+
+/* BUTTON */
+.btn-submit {
+    width: 100%;
+    background: black;
+    color: white;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: 0.3s ease;
+}
+
+.btn-submit:hover {
+    background: #333;
+}
+
+/* ANIMATIONS */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* RESPONSIVENESS */
+@media (max-width: 700px) {
+    .two-grid {
+        grid-template-columns: 1fr;
+    }
+}

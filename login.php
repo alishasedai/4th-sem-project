@@ -23,18 +23,31 @@ if (isset($_POST['submit'])) {
       if (password_verify($password, $user['password'])) {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_name'] = $user['name'];
-        $_SESSION['user_role'] = $user['role'];
+        $_SESSION['user_role'] = $user['role']; // make sure your column name is 'role'
 
-        // ✅ Redirect based on role
-        if ($user['role'] === 'customer') {
-          header("Location: customer_dashboard.php");
+        // Redirect after login if set
+        if (isset($_SESSION['redirect_after_login'])) {
+          $redirect_url = $_SESSION['redirect_after_login'];
+          unset($_SESSION['redirect_after_login']);
+          header("Location: $redirect_url");
           exit();
         } else {
-          header("Location: contractor_dashboard.php");
-          exit();
+          // Redirect based on role if no redirect URL
+          if ($user['role'] === 'customer') {
+            header("Location: index.php"); // Customer dashboard
+            exit();
+          } elseif ($user['role'] === 'contractor') {
+            header("Location: contractor_dashboard.php"); // Contractor dashboard
+            exit();
+          } elseif ($user['role'] === 'super_admin') {
+            header("Location: super_admin_dashboard.php"); // Super Admin dashboard
+            exit();
+          } else {
+            // default fallback
+            header("Location: index.php");
+            exit();
+          }
         }
-      } else {
-        echo "<script>alert('Incorrect password!');</script>";
       }
     } else {
       echo "<script>alert('No account found with that email!');</script>";

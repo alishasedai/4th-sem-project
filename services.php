@@ -61,10 +61,12 @@ session_start();
       border: 1px solid black;
       border-radius: 10px;
     }
-.s div button{
- background-color: #000;
- 
-}
+
+    .s div button {
+      background-color: #000;
+
+    }
+
     .s div button i {
       font-size: 27px;
       color: #fff;
@@ -76,6 +78,8 @@ session_start();
       border-radius: 10px;
       background-color: #fff;
       margin-left: -30px;
+      border: none;
+      outline: none;
 
     }
 
@@ -211,9 +215,12 @@ session_start();
 
     <form action="" method="GET">
       <label for="">Search your desired services</label>
+      <br><br>
 
       <div class="s">
-        <input type="text" name="search_service" value="<?php if(isset($_GET['search_service'])) {echo $_GET['search_service']; } ?>" placeholder="search services">
+        <input type="text" name="search_service" value="<?php if (isset($_GET['search_service'])) {
+                                                          echo $_GET['search_service'];
+                                                        } ?>" placeholder="search services">
         <div class="search_icon">
           <button><i class="fa-solid fa-magnifying-glass"></i></button>
 
@@ -223,22 +230,26 @@ session_start();
   </section>
   <section class="contractor-grid">
     <?php
-  if (isset($_GET['search_service'])) {
-    $filter_values = $_GET['search_service'];
+    if (isset($_GET['search_service']) && !empty($_GET['search_service'])) {
 
-    $sql = "SELECT cd.*, u.name AS contractor_name 
+      $filter_values = mysqli_real_escape_string($conn, $_GET['search_service']);
+
+      $sql = "SELECT cd.*, u.name AS contractor_name 
             FROM contractor_details cd
             JOIN users u ON cd.user_id = u.id
-            WHERE CONCAT(cd.services, cd.description) LIKE '%$filter_values%'
+            WHERE CONCAT(cd.services, ' ', cd.description, ' ', cd.service_name)
+                  LIKE '%$filter_values%'
             ORDER BY cd.created_at DESC";
-  } else {
-    $sql = "SELECT cd.*, u.name AS contractor_name 
+    } else {
+
+      $sql = "SELECT cd.*, u.name AS contractor_name 
             FROM contractor_details cd
             JOIN users u ON cd.user_id = u.id
             ORDER BY cd.created_at DESC";
-  }
+    }
 
-  $result = mysqli_query($conn, $sql);
+    $result = mysqli_query($conn, $sql);
+
 
     if (mysqli_num_rows($result) > 0):
       while ($row = mysqli_fetch_assoc($result)):
@@ -270,23 +281,32 @@ session_start();
             } else {
               echo '<p style="color:#888; font-size:13px;">No project photos uploaded yet.</p>';
             }
-    
+
             ?>
           </div>
 
           <!-- Buttons -->
           <div class="card-buttons">
-            <button class="view"><a href="contractor_profile.php">View Profile</a></button>
-            <button class="contact">Contact</button>
+            <button class="view">
+              <a href="contractor_profile.php?id=<?= $row['user_id']; ?>">View Profile</a>
+            </button>
+
+            <button class="contact">
+              <a style="color:#333;" href="booking.php?contractor_id=<?= $row['user_id']; ?>&service=<?= urlencode($row['service_name']); ?>">
+                Book Now
+              </a>
+            </button>
           </div>
+
+        </div>
         </div>
       <?php endwhile;
     else: ?>
       <p style="text-align:center; color:#777;">No contractors available yet.</p>
     <?php endif; ?>
-    
- 
-  
+
+
+
   </section>
 
   <?php include('./includes/footer.php'); ?>

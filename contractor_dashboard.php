@@ -119,6 +119,7 @@ $contractor = mysqli_fetch_assoc($result);
       <a href="edit_service.php" class="btn">Edit Details</a>
 
       <a href="contractor_reviews.php">Reviews</a>
+      <a href="contractor_bookings.php">My Bookings</a>
       <a href="logout.php">Logout</a>
     </div>
   </div>

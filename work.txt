@@ -1,0 +1,19 @@
+Possible next tasks:
+
+Show contractor services on the homepage/search page
+
+Single contractor profile page (with all uploaded work photos)
+
+Customer booking system (Book Now → Login → Confirm Booking)
+
+Contractor dashboard improvements (edit/delete service)
+
+Customer dashboard (my bookings)
+
+Search filter not working / improve search system
+
+Booking status (pending/accepted/completed)
+
+Messaging between customer & contractor
+
+Admin panel
