@@ -1,7 +1,7 @@
 <?php
 include './includes/db_connect.php';
+session_start();
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -9,7 +9,7 @@ include './includes/db_connect.php';
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>about page</title>
+  <title>About Our Contractors</title>
   <link rel="stylesheet" href="./css/style.css">
   <link rel="stylesheet" href="./css/about.css">
 </head>
@@ -23,77 +23,90 @@ include './includes/db_connect.php';
     <p>Connect with verified ceiling specialists in your area</p>
 
     <div class="contractor-grid">
+      <?php
+      // Fetch all contractors
+      $sql = "SELECT cd.*, u.name AS contractor_name
+              FROM contractor_details cd
+              JOIN users u ON cd.user_id = u.id
+              ORDER BY cd.created_at DESC";
+      $result = mysqli_query($conn, $sql);
+
+      if (mysqli_num_rows($result) > 0):
+          while ($row = mysqli_fetch_assoc($result)):
+
+              $contractor_id = $row['user_id'];
+
+              // Fetch review info
+              $reviewQuery = "SELECT COUNT(*) AS total_reviews, AVG(rating) AS avg_rating
+                              FROM reviews
+                              WHERE contractor_id = $contractor_id";
+              $reviewResult = mysqli_query($conn, $reviewQuery);
+              $reviewData = mysqli_fetch_assoc($reviewResult);
+              $total_reviews = $reviewData['total_reviews'] ?? 0;
+              $avg_rating = $reviewData['avg_rating'] ? round($reviewData['avg_rating'], 1) : 0;
+
+              // Work photos
+              $work_photos = !empty($row['work_photos']) ? explode(',', $row['work_photos']) : [];
+      ?>
+
       <!-- Contractor Card -->
       <div class="contractor-card">
-        <img src="images/profile1.jpg" alt="Contractor" class="profile-img">
-        <h3>Luxury Ceiling Designs</h3>
+        <img src="uploads/<?= htmlspecialchars($row['profile_photo']) ?>" alt="Contractor" class="profile-img">
+        <h3><?= htmlspecialchars($row['contractor_name']) ?></h3>
+
+        <!-- Dynamic Rating -->
         <div class="rating">
-          ⭐ <span>4.9</span> <small>156 reviews</small>
+          <?php
+          for ($i = 1; $i <= 5; $i++) {
+              if ($i <= floor($avg_rating)) {
+                  echo "⭐";
+              } elseif ($i - $avg_rating < 1) {
+                  echo "✰"; // half star
+              } else {
+                  echo "☆"; // empty star
+              }
+          }
+          ?>
+          <span><?= $avg_rating ?></span>
+          <small><?= $total_reviews ?> review<?= $total_reviews != 1 ? 's' : '' ?></small>
         </div>
-        <p>Premium wooden ceiling specialist with 10+ years creating bespoke ceiling solutions for luxury homes and high-end commercial spaces.</p>
+
+        <p><?= htmlspecialchars($row['description']) ?></p>
+
         <div class="work-images">
-          <img src="images/work1.jpg" alt="Work 1">
-          <img src="images/work2.jpg" alt="Work 2">
-        </div>t3F
+          <?php
+          if (!empty($work_photos)) {
+              foreach ($work_photos as $photo) {
+                  $photo = trim($photo);
+                  if ($photo != '') {
+                      echo '<img src="uploads/' . htmlspecialchars($photo) . '" alt="Work Image">';
+                  }
+              }
+          } else {
+              echo '<p style="color:#888; font-size:13px;">No project photos uploaded yet.</p>';
+          }
+          ?>
+        </div>
+
         <div class="buttons">
-          <button class="view-profile">View Profile</button>
-          <button class="contact">Contact</button>
+          <button class="view-profile">
+            <a href="contractor_profile.php?id=<?= $row['user_id'] ?>" style="color:#fff; text-decoration:none;">View Profile</a>
+          </button>
+          <button class="contact">
+            <a href="booking.php?contractor_id=<?= $row['user_id'] ?>" style="color:#333; text-decoration:none;">Contact</a>
+          </button>
         </div>
       </div>
 
-      <!-- Repeat 3 more cards -->
-      <div class="contractor-card">
-        <img src="images/profile1.jpg" alt="Contractor" class="profile-img">
-        <h3>Luxury Ceiling Designs</h3>
-        <div class="rating">
-          ⭐ <span>4.9</span> <small>156 reviews</small>
-        </div>
-        <p>Premium wooden ceiling specialist with 10+ years creating bespoke ceiling solutions for luxury homes and high-end commercial spaces.</p>
-        <div class="work-images">
-          <img src="images/work1.jpg" alt="Work 1">
-          <img src="images/work2.jpg" alt="Work 2">
-        </div>
-        <div class="buttons">
-          <button class="view-profile">View Profile</button>
-          <button class="contact">Contact</button>
-        </div>
-      </div>
-
-      <div class="contractor-card">
-        <img src="images/profile1.jpg" alt="Contractor" class="profile-img">
-        <h3>Luxury Ceiling Designs</h3>
-        <div class="rating">
-          ⭐ <span>4.9</span> <small>156 reviews</small>
-        </div>
-        <p>Premium wooden ceiling specialist with 10+ years creating bespoke ceiling solutions for luxury homes and high-end commercial spaces.</p>
-        <div class="work-images">
-          <img src="images/work1.jpg" alt="Work 1">
-          <img src="images/work2.jpg" alt="Work 2">
-        </div>
-        <div class="buttons">
-          <button class="view-profile">View Profile</button>
-          <button class="contact">Contact</button>
-        </div>
-      </div>
-
-      <div class="contractor-card">
-        <img src="images/profile1.jpg" alt="Contractor" class="profile-img">
-        <h3>Luxury Ceiling Designs</h3>
-        <div class="rating">
-          ⭐ <span>4.9</span> <small>156 reviews</small>
-        </div>
-        <p>Premium wooden ceiling specialist with 10+ years creating bespoke ceiling solutions for luxury homes and high-end commercial spaces.</p>
-        <div class="work-images">
-          <img src="images/work1.jpg" alt="Work 1">
-          <img src="images/work2.jpg" alt="Work 2">
-        </div>
-        <div class="buttons">
-          <button class="view-profile">View Profile</button>
-          <button class="contact">Contact</button>
-        </div>
-      </div>
+      <?php
+          endwhile;
+      else:
+          echo "<p style='text-align:center; color:#777;'>No contractors available yet.</p>";
+      endif;
+      ?>
     </div>
   </section>
+
   <?php include('./includes/footer.php'); ?>
 </body>
 

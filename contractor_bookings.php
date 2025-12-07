@@ -1,6 +1,9 @@
 <?php
 session_start();
 include './includes/db_connect.php';
+$_SESSION['user_id']; // exists
+$_SESSION['user_role']; // should be 'contractor'
+
 
 // Only allow contractors
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'contractor') {
@@ -22,6 +25,19 @@ $stmt->bind_param("i", $contractor_id);
 $stmt->execute();
 $result = $stmt->get_result();
 ?>
+<?php
+$contractor_id = $_SESSION['user_id'];
+$sql = "SELECT COUNT(*) AS total_reviews, AVG(rating) AS avg_rating FROM reviews WHERE contractor_id=?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $contractor_id);
+$stmt->execute();
+$res = $stmt->get_result();
+$stats = $res->fetch_assoc();
+$total_reviews = $stats['total_reviews'] ?? 0;
+$avg_rating = round($stats['avg_rating'], 1) ?? 0;
+?>
+<p>⭐ Average Rating: <?= $avg_rating ?> / 5 (<?= $total_reviews ?> reviews)</p>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -69,7 +85,7 @@ $result = $stmt->get_result();
 
                         <div class="booking-actions">
                             <?php if ($row['status'] === 'pending'): ?>
-                                <form method="POST" action="update_booking_status.php">
+                                <form method="POST" action="update_status.php">
                                     <input type="hidden" name="booking_id" value="<?= $row['id']; ?>">
                                     <select name="new_status" class="status-select">
                                         <option value="confirmed">Confirm</option>

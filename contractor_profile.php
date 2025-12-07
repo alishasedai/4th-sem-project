@@ -11,6 +11,16 @@ $contractor_id = intval($_GET['id']);
 // Fetch contractor details
 $query = "SELECT * FROM contractor_details WHERE user_id = $contractor_id LIMIT 1";
 $result = mysqli_query($conn, $query);
+// Fetch total reviews and average rating
+$avgQuery = "
+    SELECT COUNT(*) AS total_reviews, AVG(rating) AS avg_rating
+    FROM reviews
+    WHERE contractor_id = $contractor_id
+";
+$avgResult = mysqli_query($conn, $avgQuery);
+$avgData = mysqli_fetch_assoc($avgResult);
+$total_reviews = $avgData['total_reviews'] ?? 0;
+$avg_rating = round($avgData['avg_rating'], 1) ?? 0;
 
 if (mysqli_num_rows($result) == 0) {
     die("Contractor not found!");
@@ -42,6 +52,7 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'customer') {
         $can_review = true;
     }
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -147,6 +158,22 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'customer') {
             <p><strong>Experience:</strong> <?= $contractor['experience'] ?> years</p>
             <p><strong>Phone:</strong> <?= $contractor['phone'] ?></p>
             <p><strong>Address:</strong> <?= $contractor['address'] ?></p>
+            <p><strong>Average Rating:</strong> <?= $avg_rating ?> / 5 (<?= $total_reviews ?> reviews)</p>
+
+            <div>
+                <?php
+                for ($i = 1; $i <= 5; $i++) {
+                    if ($i <= floor($avg_rating)) {
+                        echo "⭐"; // full star
+                    } elseif ($i - $avg_rating < 1) {
+                        echo "✰"; // half star
+                    } else {
+                        echo "☆"; // empty star
+                    }
+                }
+                ?>
+            </div>
+
         </div>
     </div>
 

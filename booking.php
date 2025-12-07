@@ -2,6 +2,7 @@
 session_start();
 include './includes/db_connect.php';
 
+// Only logged-in customers
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'customer') {
     $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
@@ -14,64 +15,66 @@ if (!isset($_GET['contractor_id'])) {
 }
 $contractor_id = intval($_GET['contractor_id']);
 
-
+// Fetch contractor info
 $sql = "SELECT u.name, cd.services, cd.experience, cd.phone 
         FROM contractor_details cd 
         JOIN users u ON cd.user_id = u.id 
-        WHERE cd.user_id = $contractor_id";
-$result = mysqli_query($conn, $sql);
+        WHERE cd.user_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $contractor_id);
+$stmt->execute();
+$result = $stmt->get_result();
 
-if (!$result || mysqli_num_rows($result) == 0) {
-    echo "Contractor not found!";
-    exit();
+if (!$result || $result->num_rows == 0) {
+    die("Contractor not found!");
 }
 
+$contractor = $result->fetch_assoc();
 
-
-$contractor = mysqli_fetch_assoc($result);
-
+// Handle booking submission
 if (isset($_POST['book'])) {
     $customer_id = $_SESSION['user_id'];
-    $service_name = mysqli_real_escape_string($conn, $_POST['service']);
-    $address = mysqli_real_escape_string($conn, $_POST['address'] ?? '');
-    $description = mysqli_real_escape_string($conn, $_POST['notes'] ?? '');
-
-    // Combine date and time into booking_date
+    $service_name = $_POST['service'];
+    $address = $_POST['address'] ?? '';
+    $description = $_POST['notes'] ?? '';
     $date = $_POST['date'];
     $time = $_POST['time'];
     $booking_date = date('Y-m-d H:i:s', strtotime("$date $time"));
 
-    $insert_sql = "INSERT INTO bookings (customer_id, contractor_id, service_name, address, description, booking_date, status, created_at) 
-                   VALUES ('$customer_id', '$contractor_id', '$service_name', '$address', '$description', '$booking_date', 'pending', NOW())";
+    // Insert booking safely
+    $insert_sql = "INSERT INTO bookings 
+                   (customer_id, contractor_id, service_name, address, description, booking_date, status, created_at) 
+                   VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())";
+    $stmt_insert = $conn->prepare($insert_sql);
+    $stmt_insert->bind_param("iissss", $customer_id, $contractor_id, $service_name, $address, $description, $booking_date);
 
-    if (mysqli_query($conn, $insert_sql)) {
-        $booking_id = mysqli_insert_id($conn);
+    if ($stmt_insert->execute()) {
+        $booking_id = $stmt_insert->insert_id;
 
-        // Handle uploaded photos if any
+        // Handle uploaded photos
         if (isset($_FILES['customer_photos']) && !empty($_FILES['customer_photos']['name'][0])) {
             $uploads_dir = './uploads/customer_photos/';
-            if (!is_dir($uploads_dir))
-                mkdir($uploads_dir, 0777, true);
+            if (!is_dir($uploads_dir)) mkdir($uploads_dir, 0777, true);
 
             foreach ($_FILES['customer_photos']['tmp_name'] as $key => $tmp_name) {
                 $file_name = basename($_FILES['customer_photos']['name'][$key]);
                 $target_file = $uploads_dir . time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file_name);
 
                 if (move_uploaded_file($tmp_name, $target_file)) {
-                    $file_path = mysqli_real_escape_string($conn, $target_file);
-                    mysqli_query($conn, "INSERT INTO booking_photos (booking_id, photo_path) VALUES ('$booking_id', '$file_path')");
+                    $stmt_photo = $conn->prepare("INSERT INTO booking_photos (booking_id, photo_path) VALUES (?, ?)");
+                    $stmt_photo->bind_param("is", $booking_id, $target_file);
+                    $stmt_photo->execute();
                 }
             }
         }
 
-        echo "<script>alert('Booking confirmed!'); window.location='index.php';</script>";
+        echo "<script>alert('Booking confirmed!'); window.location='customer_bookings.php';</script>";
         exit();
     } else {
-        echo "Error: " . mysqli_error($conn);
+        echo "Error: " . $stmt_insert->error;
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">

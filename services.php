@@ -230,86 +230,29 @@ session_start();
   </section>
   <section class="contractor-grid">
     <?php
+    $sql = "SELECT cd.*, u.name AS contractor_name 
+        FROM contractor_details cd
+        JOIN users u ON cd.user_id = u.id";
+
     if (isset($_GET['search_service']) && !empty($_GET['search_service'])) {
-
-      $filter_values = mysqli_real_escape_string($conn, $_GET['search_service']);
-
-      $sql = "SELECT cd.*, u.name AS contractor_name 
-            FROM contractor_details cd
-            JOIN users u ON cd.user_id = u.id
-            WHERE CONCAT(cd.services, ' ', cd.description, ' ', cd.service_name)
-                  LIKE '%$filter_values%'
-            ORDER BY cd.created_at DESC";
-    } else {
-
-      $sql = "SELECT cd.*, u.name AS contractor_name 
-            FROM contractor_details cd
-            JOIN users u ON cd.user_id = u.id
-            ORDER BY cd.created_at DESC";
+      $filter = mysqli_real_escape_string($conn, $_GET['search_service']);
+      $sql .= " WHERE CONCAT(cd.services,' ',cd.description,' ',cd.service_name) LIKE '%$filter%'";
     }
 
+    $sql .= " ORDER BY cd.created_at DESC";
     $result = mysqli_query($conn, $sql);
 
-
-    if (mysqli_num_rows($result) > 0):
-      while ($row = mysqli_fetch_assoc($result)):
+    if (mysqli_num_rows($result) > 0) {
+      while ($row = mysqli_fetch_assoc($result)) {
+        $show_buttons = true;
+        include './includes/contractor_card.php';
+      }
+    } else {
+      echo '<p style="text-align:center; color:#777;">No contractors found.</p>';
+    }
     ?>
-        <div class="contractor-card">
-          <!-- Contractor Profile Photo -->
-          <img src="uploads/<?= htmlspecialchars($row['profile_photo']); ?>" class="profile" alt="Contractor">
-
-          <!-- Contractor Name -->
-          <div class="names">
-            <h3><?= htmlspecialchars($row['contractor_name']); ?></h3>
-
-            <div class="rating">⭐ 4.9 <span>156 reviews</span></div>
-          </div>
-
-          <!-- Contractor Description -->
-          <p><?= htmlspecialchars($row['description']); ?></p>
-
-          <!-- Contractor Work Photos -->
-          <div class="project-images">
-            <?php
-            if (!empty($row['work_photos'])) {
-              $photos = explode(',', $row['work_photos']);
-              foreach ($photos as $photo) {
-                if (!empty(trim($photo))) {
-                  echo '<img src="uploads/' . htmlspecialchars(trim($photo)) . '" alt="Project Image">';
-                }
-              }
-            } else {
-              echo '<p style="color:#888; font-size:13px;">No project photos uploaded yet.</p>';
-            }
-
-            ?>
-          </div>
-
-          <!-- Buttons -->
-          <div class="card-buttons">
-            <button class="view">
-              <a href="contractor_profile.php?id=<?= $row['user_id']; ?>">View Profile</a>
-            </button>
-
-            <button class="contact">
-              <a style="color:#333;"
-                href="book.php?id=<?= $row['user_id']; ?>&service=<?= urlencode($row['service_name']); ?>">
-                Book Now
-              </a>
-            </button>
-
-          </div>
-
-        </div>
-        </div>
-      <?php endwhile;
-    else: ?>
-      <p style="text-align:center; color:#777;">No contractors available yet.</p>
-    <?php endif; ?>
-
-
-
   </section>
+
 
   <?php include('./includes/footer.php'); ?>
 </body>

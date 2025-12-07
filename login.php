@@ -24,6 +24,7 @@ if (isset($_POST['submit'])) {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_name'] = $user['name'];
         $_SESSION['user_role'] = $user['role']; // make sure your column name is 'role'
+        $_SESSION['role'] = $user['role']; // for compatibility with other files
 
         // Redirect after login if set
         if (isset($_SESSION['redirect_after_login'])) {
