@@ -1,4 +1,3 @@
-
 <?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -34,23 +33,29 @@ if (isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'customer') {
         <a href="gallery.php">Gallery</a>
     </div>
 
-    <div class="buttons">
+    <div class="buttons bt">
         <?php if (isset($_SESSION['user_id'])): ?>
             <?php if ($_SESSION['user_role'] === 'customer'): ?>
-                <a href="customer_bookings.php" class="btn-notify">
-                    My Bookings
-                    <?php if ($pending_count > 0): ?>
-                        <span class="badge"><?= $pending_count ?></span>
-                    <?php endif; ?>
-                </a>
-                <a href="logout.php" class="logout-btn">Logout</a>
+                <div class="customers">
+                    <a href="customer_bookings.php" class="btn-notify">
+                        My Bookings
+                        <?php if ($pending_count > 0): ?>
+                            <span class="badge"><?= $pending_count ?></span>
+                        <?php endif; ?>
+                    </a>
+                    <a href="logout.php" class="logout-btn">Logout</a>
+                </div>
             <?php elseif ($_SESSION['user_role'] === 'contractor'): ?>
-                <a href="contractor_dashboard.php">Dashboard</a>
-                <a href="logout.php" class="logout-btn">Logout</a>
+                <div class="contractors">
+                    <a href="contractor_dashboard.php">Dashboard</a>
+                    <a href="logout.php" class="logout-btn">Logout</a>
+                </div>
             <?php endif; ?>
         <?php else: ?>
-            <a href="login.php" class="login-btn">Login</a>
-            <a href="signup.php" class="register-btn">Register</a>
+            <div class="default">
+                <a href="login.php" class="login-btn">Login</a>
+                <a href="signup.php" class="register-btn">Register</a>
+            </div>
         <?php endif; ?>
     </div>
 </nav>
